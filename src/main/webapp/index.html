@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Currency Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #converter-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+        }
+        input, button {
+            width: calc(100% - 30px);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button#swap-button {
+            background-color: red;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div id="converter-form">
+    <h1>Currency Converter</h1>
+    <label id="label-amount" for="amount">Amount in USD:</label>
+    <input type="number" id="amount" placeholder="Amount in USD">
+    <button id="convert-button" onclick="convertCurrency()">Convert to EUR</button>
+    <button id="swap-button" onclick="swapConversion()">Swap</button>
+    <p id="result"></p>
+</div>
+
+<script>
+    let conversionDirection = 'usd_to_eur';
+
+    function swapConversion() {
+        conversionDirection = conversionDirection === 'usd_to_eur' ? 'eur_to_usd' : 'usd_to_eur';
+        updateFormLabels();
+    }
+
+    function convertCurrency() {
+        const amount = document.getElementById('amount').value;
+        const button = document.getElementById('convert-button');
+        const resultDiv = document.getElementById('result');
+        const fromCurrency = conversionDirection === 'usd_to_eur' ? 'usd' : 'eur';
+        const toCurrency = conversionDirection === 'usd_to_eur' ? 'eur' : 'usd';
+
+        button.disabled = true;
+        resultDiv.innerText = 'Converting...';
+
+        fetch(`/CCv2-1.0-SNAPSHOT/currency-converter?from=${fromCurrency}&to=${toCurrency}&amount=` + amount)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.convertedAmount !== undefined) {
+                    const resultCurrency = toCurrency === 'eur' ? 'EUR' : 'USD';
+                    resultDiv.innerText = `Converted Amount: ${data.convertedAmount} ${resultCurrency}`;
+                } else {
+                    throw new Error('Invalid response object');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.innerText = 'Error: Could not convert currency.';
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+    }
+
+    function updateFormLabels() {
+        const labelAmount = document.getElementById('label-amount');
+        const inputAmount = document.getElementById('amount');
+        const convertButton = document.getElementById('convert-button');
+
+        if (conversionDirection === 'usd_to_eur') {
+            labelAmount.innerText = 'Amount in USD:';
+            inputAmount.placeholder = 'Amount in USD';
+            convertButton.innerText = 'Convert to EUR';
+        } else {
+            labelAmount.innerText = 'Amount in EUR:';
+            inputAmount.placeholder = 'Amount in EUR';
+            convertButton.innerText = 'Convert to USD';
+        }
+    }
+
+    window.onload = updateFormLabels;
+</script>
+</body>
+</html>
